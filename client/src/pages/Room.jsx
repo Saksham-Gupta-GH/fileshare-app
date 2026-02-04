@@ -5,8 +5,8 @@ import { io } from 'socket.io-client';
 import { FaPaperPlane, FaPaperclip, FaFileAlt, FaArrowLeft, FaClock, FaEdit, FaUserCircle } from 'react-icons/fa';
 import { Container, Row, Col, Card, Form, Button, InputGroup, Navbar, Badge, Spinner, Modal } from 'react-bootstrap';
 
-const API_URL = `${import.meta.env.VITE_API_URL}/api`;
-const SOCKET_URL = import.meta.env.VITE_API_URL;
+const API_URL = (import.meta.env.VITE_API_URL || '') + '/api';
+const SOCKET_URL = import.meta.env.VITE_API_URL || undefined;
 
 const Room = () => {
   const { roomId } = useParams();

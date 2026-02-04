@@ -4,7 +4,7 @@ import axios from 'axios';
 import { FaUserSecret } from 'react-icons/fa';
 import { Container, Row, Col, Card, Form, Button, Spinner } from 'react-bootstrap';
 
-const API_URL = `${import.meta.env.VITE_API_URL}/api`;
+const API_URL = (import.meta.env.VITE_API_URL || '') + '/api';
 
 const Home = () => {
   const [roomCode, setRoomCode] = useState('');
