@@ -1,20 +1,62 @@
 const mongoose = require('mongoose');
 
-const messageSchema = new mongoose.Schema({
-  type: { type: String, enum: ['text', 'file'], required: true },
-  content: { type: String }, // Text content or file path
-  originalName: { type: String }, // Original file name
-  mimeType: { type: String }, // MIME type
-  size: { type: Number },
-  senderId: { type: String }, // Anonymous ID
-  senderName: { type: String }, // Display Name
-  createdAt: { type: Date, default: Date.now }
+/* -------------------- Message Schema -------------------- */
+const messageSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      enum: ['text', 'file'],
+      required: true
+    },
+    content: {
+      type: String // Text message OR file URL
+    },
+    originalName: {
+      type: String // Original filename (for files)
+    },
+    mimeType: {
+      type: String
+    },
+    size: {
+      type: Number
+    },
+    senderId: {
+      type: String // Anonymous user ID
+    },
+    senderName: {
+      type: String // Display name
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  },
+  { _id: false } // Prevent unnecessary subdocument _id
+);
+
+/* -------------------- Room Schema -------------------- */
+const roomSchema = new mongoose.Schema({
+  roomId: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true
+  },
+
+  createdAt: {
+    type: Date,
+    default: Date.now,
+    expires: 1800 // 🔥 Auto-delete room after 30 minutes (TTL)
+  },
+
+  messages: {
+    type: [messageSchema],
+    default: []
+  }
 });
 
-const roomSchema = new mongoose.Schema({
-  roomId: { type: String, required: true, unique: true },
-  createdAt: { type: Date, default: Date.now }, // TTL handled by cron job for file cleanup
-  messages: [messageSchema]
-});
+/* -------------------- Indexes -------------------- */
+// Ensures TTL index is created properly
+roomSchema.index({ createdAt: 1 }, { expireAfterSeconds: 1800 });
 
 module.exports = mongoose.model('Room', roomSchema);
