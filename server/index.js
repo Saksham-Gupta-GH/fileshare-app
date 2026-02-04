@@ -10,6 +10,7 @@ const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 require('dotenv').config();
 
+const cron = require('node-cron');
 const Room = require('./models/Room');
 
 const app = express();
@@ -18,6 +19,56 @@ const io = new Server(server, {
   cors: {
     origin: '*', // Allow all for now
     methods: ['GET', 'POST']
+  }
+});
+
+// Cron Job: Cleanup expired rooms and files every 5 minutes
+cron.schedule('*/5 * * * *', async () => {
+  console.log('Running cleanup job...');
+  const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+
+  try {
+    // Find expired rooms
+    const expiredRooms = await Room.find({ createdAt: { $lt: thirtyMinutesAgo } });
+
+    for (const room of expiredRooms) {
+      console.log(`Cleaning up expired room: ${room.roomId}`);
+      
+      // Loop through messages to find files
+      for (const msg of room.messages) {
+        if (msg.type === 'file' && msg.content) {
+          try {
+            if (msg.content.includes('cloudinary')) {
+              // Extract public_id for Cloudinary deletion
+              // URL format: .../upload/v12345/folder/filename.ext
+              const urlParts = msg.content.split('/');
+              const filenameWithExt = urlParts[urlParts.length - 1];
+              const folder = 'fileshare-uploads'; // As defined in storage params
+              const publicId = `${folder}/${filenameWithExt.split('.')[0]}`;
+              
+              if (isCloudStorage) {
+                await cloudinary.uploader.destroy(publicId);
+                console.log(`Deleted Cloudinary file: ${publicId}`);
+              }
+            } else {
+              // Local file cleanup
+              const filePath = path.join(__dirname, 'uploads', path.basename(msg.content));
+              if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+                console.log(`Deleted local file: ${filePath}`);
+              }
+            }
+          } catch (err) {
+            console.error(`Failed to delete file for message ${msg._id}:`, err);
+          }
+        }
+      }
+      
+      // Delete the room from DB
+      await Room.deleteOne({ _id: room._id });
+    }
+  } catch (error) {
+    console.error('Error in cleanup job:', error);
   }
 });
 
@@ -74,6 +125,11 @@ const upload = multer({ storage });
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/fileshare')
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
+
+// Keep-Alive Endpoint (for cron-job.org or similar)
+app.get('/ping', (req, res) => {
+  res.send('pong');
+});
 
 // Routes
 // Create Room

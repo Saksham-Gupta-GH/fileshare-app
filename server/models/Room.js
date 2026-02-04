@@ -13,7 +13,7 @@ const messageSchema = new mongoose.Schema({
 
 const roomSchema = new mongoose.Schema({
   roomId: { type: String, required: true, unique: true },
-  createdAt: { type: Date, default: Date.now, expires: 1800 }, // Expires in 1800 seconds (30 minutes)
+  createdAt: { type: Date, default: Date.now }, // TTL handled by cron job for file cleanup
   messages: [messageSchema]
 });
 
