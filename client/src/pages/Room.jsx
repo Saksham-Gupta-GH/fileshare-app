@@ -230,6 +230,7 @@ const Room = () => {
                             href={msg.content?.startsWith('http') ? msg.content : `${BASE_URL}${msg.content}`} 
                             target="_blank" 
                             rel="noopener noreferrer"
+                            download={msg.originalName || undefined}
                             className={`d-block small mt-1 ${isMe ? 'text-white text-decoration-underline' : 'text-primary'}`}
                         >
                             Download

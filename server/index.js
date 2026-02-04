@@ -88,13 +88,14 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && proce
   storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: async (req, file) => {
-      const baseName = path.parse(file.originalname).name.replace(/\s+/g, '-');
-      const timestamped = `${Date.now()}-${baseName}`;
+      const ext = path.extname(file.originalname).slice(1).toLowerCase();
       const isImage = file.mimetype && file.mimetype.startsWith('image/');
       return {
         folder: 'fileshare-uploads',
         resource_type: isImage ? 'image' : 'raw',
-        public_id: timestamped
+        use_filename: true,
+        unique_filename: false,
+        format: isImage ? undefined : ext
       };
     },
   });
