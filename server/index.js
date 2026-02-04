@@ -228,8 +228,8 @@ io.on('connection', (socket) => {
   });
 });
 
-// Serve React App for any other route (Client-side routing)
-app.get('*', (req, res) => {
+// Serve React App for any other route (Client-side routing) — Express 5 / path-to-regexp v8 safe
+app.get('/:path(*)', (req, res) => {
   res.sendFile(path.join(clientBuildPath, 'index.html'));
 });
 

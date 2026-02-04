@@ -55,7 +55,6 @@ git push -u origin main
     *   `CLOUDINARY_CLOUD_NAME`: `...` (From Cloudinary Dashboard)
     *   `CLOUDINARY_API_KEY`: `...` (From Cloudinary Dashboard)
     *   `CLOUDINARY_API_SECRET`: `...` (From Cloudinary Dashboard)
-    *   `NODE_ENV`: `production`
 
 6.  Click **Create Web Service**.
 
@@ -84,3 +83,8 @@ Render's free tier sleeps after 15 minutes of inactivity. To fix this:
    npm run dev
    ```
    *This runs both Client and Server concurrently.*
+
+### Node Version on Render
+Render’s default Node.js version can change over time. To keep builds predictable:
+- This repo sets `engines.node` to `>=20.0.0 <23.0.0` in [package.json](file:///Users/sakshamgupta/Documents/Fileshare/package.json).
+- Alternatively, set `NODE_VERSION=22.22.0` in Render environment settings if you prefer a fixed version.
