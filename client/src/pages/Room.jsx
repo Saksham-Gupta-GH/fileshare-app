@@ -227,7 +227,16 @@ const Room = () => {
                         <div className="fw-bold text-truncate" style={{ maxWidth: '150px' }}>{msg.originalName}</div>
                         <small className={isMe ? 'text-white-50' : 'text-muted'}>{(msg.size / 1024).toFixed(1)} KB</small>
                         <a 
-                            href={msg.content?.startsWith('http') ? msg.content : `${BASE_URL}${msg.content}`} 
+                            href={(() => {
+                              if (msg.content?.startsWith('http')) {
+                                if (msg.content.includes('res.cloudinary.com') && msg.originalName) {
+                                  const sep = msg.content.includes('?') ? '&' : '?';
+                                  return `${msg.content}${sep}fl_attachment=${encodeURIComponent(msg.originalName)}`;
+                                }
+                                return msg.content;
+                              }
+                              return `${BASE_URL}${msg.content}`;
+                            })()} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             download={msg.originalName || undefined}
