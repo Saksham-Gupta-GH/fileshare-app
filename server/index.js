@@ -104,7 +104,7 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && proce
 
   storage = multer.diskStorage({
     destination: (req, file, cb) => {
-      cb(null, 'uploads/');
+      cb(null, path.join(__dirname, 'uploads'));
     },
     filename: (req, file, cb) => {
       // Sanitize filename to avoid issues
