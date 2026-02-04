@@ -7,6 +7,7 @@ import { Container, Row, Col, Card, Form, Button, InputGroup, Navbar, Badge, Spi
 
 const API_URL = (import.meta.env.VITE_API_URL || '') + '/api';
 const SOCKET_URL = import.meta.env.VITE_API_URL || undefined;
+const BASE_URL = import.meta.env.VITE_API_URL || '';
 
 const Room = () => {
   const { roomId } = useParams();
@@ -226,7 +227,7 @@ const Room = () => {
                         <div className="fw-bold text-truncate" style={{ maxWidth: '150px' }}>{msg.originalName}</div>
                         <small className={isMe ? 'text-white-50' : 'text-muted'}>{(msg.size / 1024).toFixed(1)} KB</small>
                         <a 
-                            href={`${SOCKET_URL}${msg.content}`} 
+                            href={msg.content?.startsWith('http') ? msg.content : `${BASE_URL}${msg.content}`} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className={`d-block small mt-1 ${isMe ? 'text-white text-decoration-underline' : 'text-primary'}`}

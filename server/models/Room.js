@@ -55,8 +55,4 @@ const roomSchema = new mongoose.Schema({
   }
 });
 
-/* -------------------- Indexes -------------------- */
-// Ensures TTL index is created properly
-roomSchema.index({ createdAt: 1 }, { expireAfterSeconds: 1800 });
-
 module.exports = mongoose.model('Room', roomSchema);
