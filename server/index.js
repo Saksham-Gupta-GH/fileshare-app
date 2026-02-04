@@ -6,6 +6,8 @@ const { Server } = require('socket.io');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 require('dotenv').config();
 
 const Room = require('./models/Room');
@@ -24,23 +26,48 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Ensure uploads directory exists
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
+// Storage Configuration
+let storage;
+let isCloudStorage = false;
+
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+  // Cloudinary Storage (for Render/Heroku/Vercel)
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+
+  storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+      folder: 'fileshare-uploads',
+      resource_type: 'auto', // Allow all file types (images, pdfs, etc.)
+      public_id: (req, file) => Date.now() + '-' + file.originalname.replace(/\s+/g, '-')
+    },
+  });
+  isCloudStorage = true;
+  console.log('Using Cloudinary Storage');
+} else {
+  // Local Disk Storage (for Development/VPS)
+  const uploadDir = path.join(__dirname, 'uploads');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir);
+  }
+
+  storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, 'uploads/');
+    },
+    filename: (req, file, cb) => {
+      // Sanitize filename to avoid issues
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, uniqueSuffix + '-' + file.originalname);
+    }
+  });
+  console.log('Using Local Disk Storage');
 }
 
-// Multer setup
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    // Sanitize filename to avoid issues
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + '-' + file.originalname);
-  }
-});
 const upload = multer({ storage });
 
 // Database Connection
@@ -81,8 +108,17 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
+
+  // Determine URL based on storage type
+  let fileUrl;
+  if (isCloudStorage) {
+    fileUrl = req.file.path; // Cloudinary returns the full secure URL
+  } else {
+    fileUrl = `/uploads/${req.file.filename}`; // Local static path
+  }
+
   const fileData = {
-    url: `/uploads/${req.file.filename}`,
+    url: fileUrl,
     originalName: req.file.originalname,
     mimeType: req.file.mimetype,
     size: req.file.size
