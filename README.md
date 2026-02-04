@@ -12,61 +12,63 @@ A MERN stack application for anonymous temporary rooms where users can chat and 
 ## Tech Stack
 - **Frontend**: React, Vite, Bootstrap, Socket.io-client
 - **Backend**: Node.js, Express, Socket.io, MongoDB (Mongoose), Multer, Cloudinary
-- **Deployment**: Vercel (Frontend), Render/Oracle (Backend)
+- **Deployment**: Render (Single Service)
 
 ---
 
-## 🚀 Deployment Guide (Choose One)
+## 🚀 24/7 Free Deployment Guide (Render Only)
 
-### Option 1: The Easy Way (Render + Vercel)
-**No Linux knowledge required. Free.**
+This project is configured to run as a **single service** on Render (Backend serves Frontend). This is the easiest and cheapest way to deploy.
 
-#### 1. File Storage Setup (Cloudinary)
-Since Render (and most free hosts) delete your files when the server restarts, you need **Cloudinary** for file uploads.
-1. Sign up at [Cloudinary](https://cloudinary.com/) (Free Plan).
-2. Go to your Dashboard and copy:
-   - `Cloud Name`
-   - `API Key`
-   - `API Secret`
+### Prerequisites
+1.  **GitHub Account**: You must push this code to a GitHub repository.
+2.  **Cloudinary Account**: For free file storage (since Render deletes local files on restart).
+3.  **MongoDB Atlas**: For the database.
+4.  **Cron-Job.org**: To keep the free server awake 24/7.
 
-#### 2. Deploy Backend (Render)
-1. Push your code to GitHub.
-2. Sign up at [Render.com](https://render.com/).
-3. Click **New +** > **Web Service**.
-4. Connect your GitHub repo.
-5. Settings:
-   - **Root Directory**: `server`
-   - **Build Command**: `npm install`
-   - **Start Command**: `node index.js`
-6. **Environment Variables** (Add these):
-   - `MONGODB_URI`: Your MongoDB connection string.
-   - `CLOUDINARY_CLOUD_NAME`: (from step 1)
-   - `CLOUDINARY_API_KEY`: (from step 1)
-   - `CLOUDINARY_API_SECRET`: (from step 1)
-7. Click **Deploy Web Service**.
-8. Copy your Backend URL (e.g., `https://fileshare-backend.onrender.com`).
+### Step 1: Push to GitHub
+```bash
+git remote add origin https://github.com/Saksham-Gupta-GH/fileshare-app.git
+git branch -M main
+git push -u origin main
+```
 
-#### 3. Deploy Frontend (Vercel)
-1. Sign up at [Vercel](https://vercel.com/).
-2. Import your GitHub repo.
-3. **Environment Variables**:
-   - `VITE_API_URL`: Your Render Backend URL (e.g., `https://fileshare-backend.onrender.com`)
-4. Click **Deploy**.
+### Step 2: Create Web Service on Render
+1.  Log in to [Render.com](https://render.com/).
+2.  Click **New +** > **Web Service**.
+3.  Connect your GitHub repository.
+4.  **Configuration**:
+    *   **Name**: `fileshare-app` (or whatever you like)
+    *   **Region**: Closest to you (e.g., Singapore, Oregon)
+    *   **Branch**: `main`
+    *   **Root Directory**: `.` (Leave empty / default)
+    *   **Runtime**: `Node`
+    *   **Build Command**: `npm run build`
+        *   *(This will install everything and build the React app)*
+    *   **Start Command**: `npm start`
+        *   *(This starts the Node server which serves the React app)*
+    *   **Instance Type**: Free
 
----
+5.  **Environment Variables** (Scroll down to "Advanced"):
+    Add the following variables:
+    *   `MONGODB_URI`: `mongodb+srv://...` (Your Connection String)
+    *   `CLOUDINARY_CLOUD_NAME`: `...` (From Cloudinary Dashboard)
+    *   `CLOUDINARY_API_KEY`: `...` (From Cloudinary Dashboard)
+    *   `CLOUDINARY_API_SECRET`: `...` (From Cloudinary Dashboard)
+    *   `NODE_ENV`: `production`
 
-### Option 2: The "Pro" Way (Oracle Cloud VM)
-**Run your own VPS. More control, slightly more complex.**
+6.  Click **Create Web Service**.
 
-1. **Create VM**: Launch an Ubuntu VM on Oracle Cloud.
-2. **Open Port**: Allow TCP traffic on port `5001`.
-3. **Setup**:
-   - SSH into VM.
-   - Run `setup-oracle-vm.sh`.
-   - Clone repo and `npm install` in `server`.
-   - Create `.env` with `PORT=5001` and `MONGODB_URI`.
-   - Run `pm2 start ecosystem.config.js`.
-4. **Deploy Frontend**: Same as above (Vercel), but set `VITE_API_URL` to `http://YOUR_VM_IP:5001`.
+### Step 3: Keep it Awake (24/7)
+Render's free tier sleeps after 15 minutes of inactivity. To fix this:
+1.  Copy your new Render URL (e.g., `https://fileshare-app.onrender.com`).
+2.  Go to [cron-job.org](https://cron-job.org/) (Free).
+3.  Create a **New Cron Job**:
+    *   **URL**: `https://fileshare-app.onrender.com/ping`
+    *   **Schedule**: Every 10 minutes.
+4.  Save.
+
+**🎉 Done! Your app is now live, handles file uploads safely, and runs 24/7 for free.**
 
 ---
 
@@ -74,16 +76,11 @@ Since Render (and most free hosts) delete your files when the server restarts, y
 1. Clone repo.
 2. Install dependencies:
    ```bash
-   npm install
-   cd client && npm install
-   cd ../server && npm install
+   npm run install-all  # Custom script to install root, client, and server deps
    ```
-3. Create `.env` in `server/` (see `.env.example`).
+3. Create `.env` in `server/` (see `.env.example`) and `.env` in `client/`.
 4. Start dev servers:
    ```bash
-   # Terminal 1 (Server)
-   cd server && npm run dev
-
-   # Terminal 2 (Client)
-   cd client && npm run dev
+   npm run dev
    ```
+   *This runs both Client and Server concurrently.*
