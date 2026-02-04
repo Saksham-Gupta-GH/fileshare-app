@@ -87,10 +87,15 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && proce
 
   storage = new CloudinaryStorage({
     cloudinary: cloudinary,
-    params: {
-      folder: 'fileshare-uploads',
-      resource_type: 'auto', // Allow all file types (images, pdfs, etc.)
-      public_id: (req, file) => Date.now() + '-' + file.originalname.replace(/\s+/g, '-')
+    params: async (req, file) => {
+      const baseName = path.parse(file.originalname).name.replace(/\s+/g, '-');
+      const timestamped = `${Date.now()}-${baseName}`;
+      const isImage = file.mimetype && file.mimetype.startsWith('image/');
+      return {
+        folder: 'fileshare-uploads',
+        resource_type: isImage ? 'image' : 'raw',
+        public_id: timestamped
+      };
     },
   });
   isCloudStorage = true;
@@ -164,7 +169,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
   // Determine URL based on storage type
   let fileUrl;
   if (isCloudStorage) {
-    fileUrl = req.file.path; // Cloudinary returns the full secure URL
+    fileUrl = req.file.path || req.file.secure_url;
   } else {
     fileUrl = `/uploads/${req.file.filename}`; // Local static path
   }
