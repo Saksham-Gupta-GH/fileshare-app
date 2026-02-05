@@ -16,8 +16,7 @@ const buildDownloadUrl = (url, name) => {
     const idx = url.indexOf(marker);
     const prefix = url.slice(0, idx + marker.length);
     const suffix = url.slice(idx + marker.length);
-    const encoded = encodeURIComponent(name || 'file');
-    return `${prefix}fl_attachment:${encoded}/${suffix}`;
+    return `${prefix}fl_attachment/${suffix}`;
   }
   return url.startsWith('http') ? url : `${BASE_URL}${url}`;
 };
