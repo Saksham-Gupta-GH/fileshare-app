@@ -11,16 +11,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || '';
 
 const buildDownloadUrl = (url, name) => {
   if (!url) return '';
-  if (url.startsWith('http') && url.includes('res.cloudinary.com') && url.includes('/upload/')) {
-    const marker = '/upload/';
-    const idx = url.indexOf(marker);
-    const prefix = url.slice(0, idx + marker.length);
-    const suffix = url.slice(idx + marker.length);
-    const base = `${prefix}fl_attachment/${suffix}`;
-    const sep = base.includes('?') ? '&' : '?';
-    const fname = encodeURIComponent(name || 'file.pdf');
-    return `${base}${sep}dl=${fname}`;
-  }
+  if (url.startsWith('http')) return url;
   return url.startsWith('http') ? url : `${BASE_URL}${url}`;
 };
 const Room = () => {

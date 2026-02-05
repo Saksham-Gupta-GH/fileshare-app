@@ -6,6 +6,7 @@ const { Server } = require('socket.io');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const mime = require('mime-types');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 require('dotenv').config();
@@ -55,7 +56,13 @@ app.get('/cleanup', async (req, res) => {
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  setHeaders: (res, filePath) => {
+    const type = mime.lookup(filePath) || 'application/octet-stream';
+    res.setHeader('Content-Type', type);
+    res.setHeader('Cache-Control', 'no-store');
+  }
+}));
 
 // Serve React Frontend (Production)
 const clientBuildPath = path.join(__dirname, '../client/dist');
@@ -89,11 +96,13 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && proce
     cloudinary: cloudinary,
     params: async (req, file) => {
       const isImage = file.mimetype && file.mimetype.startsWith('image/');
+      const ext = path.extname(file.originalname).slice(1).toLowerCase();
       return {
         folder: 'fileshare-uploads',
         resource_type: isImage ? 'image' : 'raw',
         use_filename: true,
-        unique_filename: false
+        unique_filename: false,
+        format: isImage ? undefined : ext
       };
     },
   });
