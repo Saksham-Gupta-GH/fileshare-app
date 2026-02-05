@@ -9,4 +9,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Render App
-        run: curl https://safepay-7cyg.onrender.com/ping
+        run: curl https://fileshare-app-qe5e.onrender.com/ping
+
