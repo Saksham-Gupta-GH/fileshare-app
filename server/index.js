@@ -7,8 +7,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const mime = require('mime-types');
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+// Cloud storage removed; using local disk for 30-minute TTL rooms
 require('dotenv').config();
 
 const Room = require('./models/Room');
@@ -31,18 +30,9 @@ app.get('/cleanup', async (req, res) => {
       for (const msg of room.messages) {
         if (msg.type === 'file' && msg.content) {
           try {
-            if (isCloudStorage && msg.content.includes('/fileshare-uploads/')) {
-              const urlParts = msg.content.split('/');
-              const filename = urlParts[urlParts.length - 1];
-              const publicId = `fileshare-uploads/${filename.replace(/\.[^/.]+$/, '')}`;
-              await cloudinary.uploader.destroy(publicId);
-            } else {
-              const filePath = path.join(__dirname, 'uploads', path.basename(msg.content));
-              if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            }
-          } catch (e) {
-            // swallow deletion errors, continue
-          }
+            const filePath = path.join(__dirname, 'uploads', path.basename(msg.content));
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+          } catch (e) {}
         }
       }
       await Room.deleteOne({ _id: room._id });
@@ -81,52 +71,22 @@ if (fs.existsSync(clientBuildPath)) {
 }
 
 // Storage Configuration
+// Local Disk Storage (for 30-minute TTL rooms)
 let storage;
-let isCloudStorage = false;
-
-if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
-  // Cloudinary Storage (for Render/Heroku/Vercel)
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-  });
-
-  storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: async (req, file) => {
-      const isImage = file.mimetype && file.mimetype.startsWith('image/');
-      const ext = path.extname(file.originalname).slice(1).toLowerCase();
-      return {
-        folder: 'fileshare-uploads',
-        resource_type: isImage ? 'image' : 'raw',
-        use_filename: true,
-        unique_filename: false,
-        format: isImage ? undefined : ext
-      };
-    },
-  });
-  isCloudStorage = true;
-  console.log('Using Cloudinary Storage');
-} else {
-  // Local Disk Storage (for Development/VPS)
-  const uploadDir = path.join(__dirname, 'uploads');
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
-  }
-
-  storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, path.join(__dirname, 'uploads'));
-    },
-    filename: (req, file, cb) => {
-      // Sanitize filename to avoid issues
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      cb(null, uniqueSuffix + '-' + file.originalname);
-    }
-  });
-  console.log('Using Local Disk Storage');
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
 }
+storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, 'uploads'));
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
+  }
+});
+console.log('Using Local Disk Storage');
 
 const upload = multer({ storage });
 
@@ -174,13 +134,8 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     return res.status(400).json({ error: 'No file uploaded' });
   }
 
-  // Determine URL based on storage type
-  let fileUrl;
-  if (isCloudStorage) {
-    fileUrl = req.file.path || req.file.secure_url;
-  } else {
-    fileUrl = `/uploads/${req.file.filename}`; // Local static path
-  }
+  // Determine URL (local storage)
+  const fileUrl = `/uploads/${req.file.filename}`;
 
   const fileData = {
     url: fileUrl,
