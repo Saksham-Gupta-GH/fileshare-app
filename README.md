@@ -16,7 +16,7 @@ A MERN stack application for anonymous temporary rooms where users can chat and 
 
 ---
 
-## 🚀 24/7 Free Deployment Guide (Render Only)
+## 24/7 Free Deployment Guide (Render Only)
 
 This project is configured to run as a **single service** on Render (Backend serves Frontend). This is the easiest and cheapest way to deploy.
 
@@ -67,7 +67,7 @@ Render's free tier sleeps after 15 minutes of inactivity. To fix this:
     *   **Schedule**: Every 10 minutes.
 4.  Save.
 
-**🎉 Done! Your app is now live, handles file uploads safely, and runs 24/7 for free.**
+** Done! Your app is now live, handles file uploads safely, and runs 24/7 for free.**
 
 ---
 
